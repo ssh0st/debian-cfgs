@@ -26,12 +26,12 @@ mkdir -p /etc/ipsec.d/private
 chmod 700 /etc/ipsec.d/private
 
 /usr/sbin/ipsec pki --gen --type rsa --size 4096 --outform pem > /etc/ipsec.d/private/ca-key.pem
-/usr/sbin/ipsec pki --self --ca --lifetime 3650 --in /etc/ipsec.d/private/ca-key.pem --type rsa --dn "CN=VPN Root CA" --outform pem > /etc/ipsec.d/cacert.pem
+/usr/sbin/ipsec pki --self --ca --lifetime 3650 --in /etc/ipsec.d/private/ca-key.pem --type rsa --dn "CN=VPN Root CA" --outform pem > /etc/ipsec.d/cacerts/ca-cert.pem
 
 /usr/sbin/ipsec pki --gen --type rsa --size 4096 --outform pem > /etc/ipsec.d/private/server-key.pem
 
 /usr/sbin/ipsec pki --pub --in /etc/ipsec.d/private/server-key.pem --type rsa | \
-/usr/sbin/ipsec pki --issue --lifetime 1825 --cacert /etc/ipsec.d/cacert.pem \
+/usr/sbin/ipsec pki --issue --lifetime 1825 --cacert /etc/ipsec.d/cacerts/ca-cert.pem \
 --cakey /etc/ipsec.d/private/ca-key.pem --dn "CN=$PUB_ID" \
 --san="$SERVER_IP" --san="$PUB_ID" --flag serverAuth --flag ikeIntermediate \
 --outform pem > /etc/ipsec.d/certs/server-cert.pem
@@ -56,7 +56,7 @@ conn ikev2-vpn
     mobike=yes
     rekey=no
     left=%any
-    leftid=vm878109.cloud.nuxt.network
+    leftid=$PUB_ID
     leftcert=server-cert.pem
     leftsendcert=always
     leftsubnet=0.0.0.0/0
