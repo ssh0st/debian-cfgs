@@ -9,16 +9,15 @@ VPN_PASS="$4"
 apt update
 apt install -y strongswan strongswan-pki strongswan-starter ufw
 
-ufw allow ssh
-ufw allow 500,4500/udp
+/usr/sbin/ufw allow 500,4500/udp
 
 echo 'net.ipv4.ip_forward=1' >> /etc/sysctl.conf
 echo 'net.ipv4.conf.all.accept_redirects=0' >> /etc/sysctl.conf
 echo 'net.ipv4.conf.all.send_redirects=0' >> /etc/sysctl.conf
 sysctl -p
 
-ufw allow in on $IFACE from 10.10.10.0/24
-ufw route allow in on $IFACE out on $IFACE
+/usr/sbin/ufw allow in on $IFACE from 10.10.10.0/24
+/usr/sbin/ufw route allow in on $IFACE out on $IFACE
 
 iptables -t nat -A POSTROUTING -s 10.10.10.0/24 -o $IFACE -m policy --dir out --pol ipsec -j ACCEPT
 iptables -t nat -A POSTROUTING -s 10.10.10.0/24 -o $IFACE -j MASQUERADE
@@ -38,7 +37,7 @@ ipsec pki --issue --lifetime 1825 --cacert /etc/ipsec.d/cacert.pem \
 --san="$SERVER_IP" --flag serverAuth --flag ikeIntermediate \
 --outform pem > /etc/ipsec.d/certs/server-cert.pem
 
-cat > /etc/ipsec.conf << EOF                                                              
+cat > /etc/ipsec.conf << EOF
 config setup
     charondebug="ike 4 knl 4 cfg 4 net 4 enc 4"
     uniqueids=no
@@ -83,7 +82,7 @@ chmod 600 /etc/ipsec.d/private/*
 systemctl restart strongswan-starter
 systemctl enable strongswan-starter
 
-ufw --force enable
+/usr/sbin/ufw --force enable
 
 systemctl status strongswan-starter
 ipsec status
