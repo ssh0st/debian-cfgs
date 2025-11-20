@@ -14,7 +14,7 @@ apt install -y strongswan strongswan-pki strongswan-starter ufw
 echo 'net.ipv4.ip_forward=1' >> /etc/sysctl.conf
 echo 'net.ipv4.conf.all.accept_redirects=0' >> /etc/sysctl.conf
 echo 'net.ipv4.conf.all.send_redirects=0' >> /etc/sysctl.conf
-/usr/sbin/esysctl -p
+/usr/sbin/sysctl -p
 
 /usr/sbin/ufw allow in on $IFACE from 10.10.10.0/24
 /usr/sbin/ufw route allow in on $IFACE out on $IFACE
@@ -32,7 +32,7 @@ chmod 700 /etc/ipsec.d/private
 /usr/sbin/ipsec pki --gen --type rsa --size 4096 --outform pem > /etc/ipsec.d/private/server-key.pem
 
 /usr/sbin/ipsec pki --pub --in /etc/ipsec.d/private/server-key.pem --type rsa | \
-/usr/sbin/sipsec pki --issue --lifetime 1825 --cacert /etc/ipsec.d/cacert.pem \
+/usr/sbin/ipsec pki --issue --lifetime 1825 --cacert /etc/ipsec.d/cacert.pem \
 --cakey /etc/ipsec.d/private/ca-key.pem --dn "CN=$SERVER_IP" \
 --san="$SERVER_IP" --flag serverAuth --flag ikeIntermediate \
 --outform pem > /etc/ipsec.d/certs/server-cert.pem
