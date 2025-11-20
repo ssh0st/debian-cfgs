@@ -2,9 +2,8 @@
 set -e
 
 SERVER_IP="$1"
-IFACE="$2"
-VPN_USER="$3"
-VPN_PASS="$4"
+PUB_ID="$2"
+IFACE="$3"
 
 apt update
 apt install -y strongswan strongswan-pki strongswan-starter ufw
@@ -33,8 +32,8 @@ chmod 700 /etc/ipsec.d/private
 
 /usr/sbin/ipsec pki --pub --in /etc/ipsec.d/private/server-key.pem --type rsa | \
 /usr/sbin/ipsec pki --issue --lifetime 1825 --cacert /etc/ipsec.d/cacert.pem \
---cakey /etc/ipsec.d/private/ca-key.pem --dn "CN=$SERVER_IP" \
---san="$SERVER_IP" --flag serverAuth --flag ikeIntermediate \
+--cakey /etc/ipsec.d/private/ca-key.pem --dn "CN=$PUB_ID" \
+--san="$SERVER_IP" --san="$PUB_ID" --flag serverAuth --flag ikeIntermediate \
 --outform pem > /etc/ipsec.d/certs/server-cert.pem
 
 cat > /etc/ipsec.conf << EOF
@@ -73,7 +72,7 @@ EOF
 
 cat > /etc/ipsec.secrets << EOF
 : RSA server-key.pem
-$VPN_USER : EAP "$VPN_PASS"
+liteuser : EAP "super_passw0rd"
 EOF
 
 chmod 600 /etc/ipsec.secrets
