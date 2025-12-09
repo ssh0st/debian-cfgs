@@ -2,6 +2,10 @@
 
 set -ex
 
+print_info() {
+    echo -e "${GREEN}[INFO]${NC} $1"
+}
+
 setup_udp_tunnel() {
     print_info "Настройка Plain UDP Tunnel ..."
     
