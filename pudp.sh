@@ -51,3 +51,5 @@ EOF
 main() {
     setup_udp_tunnel  
 }
+
+main
