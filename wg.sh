@@ -8,8 +8,6 @@ setup_wg() {
     apt update
     apt install -y wireguard
 
-    echo 1 > /proc/sys/net/ipv4/ip_forward
-
     wg genkey | tee /etc/wireguard/server_privatekey | wg pubkey | tee /etc/wireguard/server_publickey
 
     SERVER_PRIVATE=$(cat /etc/wireguard/private.key)
@@ -26,6 +24,9 @@ SaveConfig = true
 PostUp = /usr/sbin/iptables -A FORWARD -i %i -j ACCEPT; iptables -t nat -A POSTROUTING -o ens3 -j MASQUERADE 
 PostDown = /usr/sbin/iptables -D FORWARD -i %i -j ACCEPT; iptables -t nat -D POSTROUTING -o ens3 -j MASQUERADE
 EOF
+
+    echo "net.ipv4.ip_forward=1" >> /etc/sysctl.conf
+    sysctl -p
 
     systemctl enable wg-quick@wg0
     systemctl start wg-quick@wg0
