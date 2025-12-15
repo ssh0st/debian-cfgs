@@ -4,10 +4,6 @@ set -e
 
 export PATH=$PATH:/usr/sbin:/sbin:/usr/bin:/bin
 
-check_root() {
-    if [[ $EUID -ne 0 ]]; then echo "Требуются права root" exit 1
-}
-
 setup_wg() {
     apt update
     apt install -y wireguard
@@ -36,7 +32,6 @@ EOF
 }
 
 main() {
-    check_root
     setup_wg
     
     echo "WireGuard запущен"
