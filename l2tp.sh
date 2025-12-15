@@ -7,11 +7,11 @@ if [ "$EUID" -ne 0 ]; then
     exit 1
 fi
 
-PUBLIC_IP=$(curl -s ifconfig.me || hostname -I | awk '{print $1}')
-PSK_KEY="$(date +%s | md5sum | head -c 16)"
+PUBLIC_IP=$(/usr/bin/curl -s ifconfig.me || hostname -I | /usr/bin/awk '{print $1}')
+PSK_KEY="$(date +%s | /usr/bin/md5sum | /usr/bin/head -c 16)"
 VPN_USER="usr_00"
 VPN_PASS="pa\$\$w0rd"
-EXTERNAL_IF=$(ip route | grep default | awk '{print $5}' | head -1)
+EXTERNAL_IF=$(ip route | grep default | /usr/bin/awk '{print $5}' | /usr/bin/head -1)
 
 apt update
 apt install -y strongswan xl2tpd
@@ -83,14 +83,14 @@ EOF
 
 chmod 600 /etc/ppp/chap-secrets
 
-sysctl -w net.ipv4.ip_forward=1
+/sbin/sysctl -w net.ipv4.ip_forward=1
 echo "net.ipv4.ip_forward = 1" > /etc/sysctl.d/99-vpn.conf
-sysctl -p /etc/sysctl.d/99-vpn.conf
+/sbin/sysctl -p /etc/sysctl.d/99-vpn.conf
 
-ufw allow 500/udp
-ufw allow 4500/udp
-ufw allow 1701/udp
-ufw allow proto esp from any to any
+/usr/bin/ufw allow 500/udp
+/usr/bin/ufw allow 4500/udp
+/usr/bin/ufw allow 1701/udp
+/usr/bin/ufw allow proto esp from any to any
 
 cat > /etc/ufw/before.rules << EOF
 *nat
@@ -99,11 +99,11 @@ cat > /etc/ufw/before.rules << EOF
 COMMIT
 EOF
 
-sed -i '/^DEFAULT_FORWARD_POLICY=/s/DROP/ACCEPT/' /etc/default/ufw
-ufw --force disable
-ufw --force enable
+/usr/bin/sed -i '/^DEFAULT_FORWARD_POLICY=/s/DROP/ACCEPT/' /etc/default/ufw
+/usr/bin/ufw --force disable
+/usr/bin/ufw --force enable
 
-iptables -t nat -A POSTROUTING -s 10.10.10.0/24 -o $EXTERNAL_IF -j MASQUERADE
+/sbin/iptables -t nat -A POSTROUTING -s 10.10.10.0/24 -o $EXTERNAL_IF -j MASQUERADE
 
 systemctl restart strongswan-starter
 systemctl enable strongswan-starter
