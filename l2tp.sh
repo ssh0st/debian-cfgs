@@ -87,6 +87,7 @@ chmod 600 /etc/ppp/chap-secrets
 echo "net.ipv4.ip_forward = 1" > /etc/sysctl.d/99-vpn.conf
 /sbin/sysctl -p /etc/sysctl.d/99-vpn.conf
 
+
 /usr/sbin/ufw allow 500/udp
 /usr/sbin/ufw allow 4500/udp
 /usr/sbin/ufw allow 1701/udp
