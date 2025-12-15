@@ -43,12 +43,12 @@ function get_user_input() {
 
     CURRENT_SSH_PORT=$(grep -E "^Port\s+[0-9]+" /etc/ssh/sshd_config 2>/dev/null | awk '{print $2}' | head -1)
     if [[ -z "${CURRENT_SSH_PORT}" ]]; then
-        CURRENT_SSH_PORT="22"
+        CURRENT_SSH_PORT="notF0und"
     fi
     
     CURRENT_USER=$(who | awk '{print $1}' | grep -v root | head -1)
     if [[ -z "${CURRENT_USER}" ]]; then
-        CURRENT_USER="superh0st"
+        CURRENT_USER="notF0und"
     fi
     
     SERVER_PUB_IP=$(curl -s -4 ifconfig.me 2>/dev/null || curl -s -6 ifconfig.me 2>/dev/null || ip -4 addr | sed -ne 's|^.* inet \([^/]*\)/.* scope global.*$|\1|p' | awk '{print $1}' | head -1)
@@ -445,7 +445,7 @@ main() {
     configure_fail2ban "$SSH_PORT" "$INSTALL_FAIL2BAN" "$ADMIN_EMAIL"
     setup_fail2ban_ufw "$INSTALL_FAIL2BAN" "$INSTALL_UFW"
     enable_services "$INSTALL_FAIL2BAN" "$SSH_PORT"
-    setup_user_env
+    setup_user_env "$USERNAME"
     print_summary "$SSH_PORT" "$USERNAME" "$INSTALL_UFW" "$INSTALL_FAIL2BAN" "$SERVER_PUB_IP"
 }
 
