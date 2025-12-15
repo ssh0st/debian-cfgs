@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 export PATH=$PATH:/usr/sbin:/sbin:/usr/bin:/bin
 
 RED='\033[0;31m'
