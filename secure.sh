@@ -51,16 +51,20 @@ configure_ssh() {
     cp /etc/ssh/sshd_config /etc/ssh/sshd_config.backup
 
     cat > /etc/ssh/sshd_config << 'EOF'
+Include /etc/ssh/sshd_config.d/*.conf
+KbdInteractiveAuthentication no
+UsePAM yes
+X11Forwarding yes
+PrintMotd no
+UseDNS no
+AcceptEnv LANG LC_*
+Subsystem       sftp    /usr/lib/openssh/sftp-server
+
 Port 7220
 PermitRootLogin no
 PubkeyAuthentication no
 PasswordAuthentication yes
 ChallengeResponseAuthentication no
-UsePAM yes
-X11Forwarding yes
-PrintMotd no
-AcceptEnv LANG LC_*
-Subsystem sftp /usr/lib/openssh/sftp-server
 EOF
 
     print_info "SSH сконфигурирован на порт 7220 с отключением root доступа"
