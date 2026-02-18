@@ -29,7 +29,6 @@ echo "[INFO] Configuring iptables for NAT..."
 iptables -t nat -A POSTROUTING -s 10.10.10.0/24 -o "$IFACE" -m policy --dir out --pol ipsec -j ACCEPT
 iptables -t nat -A POSTROUTING -s 10.10.10.0/24 -o "$IFACE" -j MASQUERADE
 iptables -I FORWARD 1 -j ACCEPT
-netfilter-persistent save
 
 echo "[INFO] Creating certificate directories..."
 mkdir -p /etc/ipsec.d/private /etc/ipsec.d/cacerts /etc/ipsec.d/certs
