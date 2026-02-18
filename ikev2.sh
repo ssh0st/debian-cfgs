@@ -12,7 +12,7 @@ fi
 
 echo "[INFO] Updating system..."
 apt update
-apt install -y strongswan strongswan-pki strongswan-starter ufw iptables-persistent curl
+apt install -y strongswan strongswan-pki strongswan-starter ufw
 
 echo "[INFO] Configuring UFW..."
 ufw allow 500/udp
