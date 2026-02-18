@@ -369,6 +369,19 @@ enable_services() {
     print_info "SSH restarted on port $ssh_port"
 }
 
+setup_system_path() {
+    print_info "Configuring global system PATH..."
+
+    cat > /etc/profile.d/system-path.sh << 'EOF'
+export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$PATH"
+EOF
+
+    chmod 755 /etc/profile.d/system-path.sh
+
+    print_info "Global PATH configured in /etc/profile.d/system-path.sh"
+}
+
+
 print_summary() {
     local ssh_port="$1"
     local username="$2"
@@ -419,14 +432,6 @@ print_summary() {
     fi
 }
 
-setup_user_env() {
-    local username="$1"
-    
-    echo 'export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$PATH"' >> /home/$username/.bashrc
-    
-    chown $username:$username /home/$username/.bashrc
-}
-
 main() {
     clear
     
@@ -445,7 +450,7 @@ main() {
     configure_fail2ban "$SSH_PORT" "$INSTALL_FAIL2BAN" "$ADMIN_EMAIL"
     setup_fail2ban_ufw "$INSTALL_FAIL2BAN" "$INSTALL_UFW"
     enable_services "$INSTALL_FAIL2BAN" "$SSH_PORT"
-    setup_user_env "$USERNAME"
+    setup_system_path
     print_summary "$SSH_PORT" "$USERNAME" "$INSTALL_UFW" "$INSTALL_FAIL2BAN" "$SERVER_PUB_IP"
 }
 
