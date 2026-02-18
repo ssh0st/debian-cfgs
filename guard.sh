@@ -219,8 +219,8 @@ Port $ssh_port
 PermitRootLogin $root_login
 PubkeyAuthentication $pubkey_auth
 PasswordAuthentication $password_auth
-ChallengeResponseAuthentication no
 EOF
+
     
     print_info "SSH now is $ssh_port"
     print_info "PermitRootLogin: $root_login"
