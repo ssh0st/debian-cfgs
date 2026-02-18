@@ -43,12 +43,12 @@ function get_user_input() {
 
     CURRENT_SSH_PORT=$(grep -E "^Port\s+[0-9]+" /etc/ssh/sshd_config 2>/dev/null | awk '{print $2}' | head -1)
     if [[ -z "${CURRENT_SSH_PORT}" ]]; then
-        CURRENT_SSH_PORT="notF0und"
+        CURRENT_SSH_PORT="722"
     fi
     
     CURRENT_USER=$(who | awk '{print $1}' | grep -v root | head -1)
     if [[ -z "${CURRENT_USER}" ]]; then
-        CURRENT_USER="notF0und"
+        CURRENT_USER="superh0st"
     fi
     
     SERVER_PUB_IP=$(curl -s -4 ifconfig.me 2>/dev/null || curl -s -6 ifconfig.me 2>/dev/null || ip -4 addr | sed -ne 's|^.* inet \([^/]*\)/.* scope global.*$|\1|p' | awk '{print $1}' | head -1)
