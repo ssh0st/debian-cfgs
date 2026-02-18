@@ -5,40 +5,59 @@ SERVER_IP="$1"
 PUB_ID="$2"
 IFACE="$3"
 
+if [[ -z "$SERVER_IP" || -z "$PUB_ID" || -z "$IFACE" ]]; then
+    echo "Usage: $0 <SERVER_PUBLIC_IP> <VPN_ID> <INTERFACE>"
+    exit 1
+fi
+
+echo "[INFO] Updating system..."
 apt update
-apt install -y strongswan strongswan-pki strongswan-starter ufw
+apt install -y strongswan strongswan-pki strongswan-starter ufw iptables-persistent curl
 
-/usr/sbin/ufw allow 500,4500/udp
+echo "[INFO] Configuring UFW..."
+ufw allow 500/udp
+ufw allow 4500/udp
+ufw --force enable
 
+echo "[INFO] Enabling IPv4 forwarding..."
+sysctl -w net.ipv4.ip_forward=1
 echo 'net.ipv4.ip_forward=1' >> /etc/sysctl.conf
 echo 'net.ipv4.conf.all.accept_redirects=0' >> /etc/sysctl.conf
 echo 'net.ipv4.conf.all.send_redirects=0' >> /etc/sysctl.conf
-/usr/sbin/sysctl -p
 
-/usr/sbin/ufw allow in on $IFACE from 10.10.10.0/24
-/usr/sbin/ufw route allow in on $IFACE out on $IFACE
+echo "[INFO] Configuring iptables for NAT..."
+iptables -t nat -A POSTROUTING -s 10.10.10.0/24 -o "$IFACE" -m policy --dir out --pol ipsec -j ACCEPT
+iptables -t nat -A POSTROUTING -s 10.10.10.0/24 -o "$IFACE" -j MASQUERADE
+iptables -I FORWARD 1 -j ACCEPT
+netfilter-persistent save
 
-/usr/sbin/iptables -t nat -A POSTROUTING -s 10.10.10.0/24 -o $IFACE -m policy --dir out --pol ipsec -j ACCEPT
-/usr/sbin/iptables -t nat -A POSTROUTING -s 10.10.10.0/24 -o $IFACE -j MASQUERADE
-/usr/sbin/iptables -I FORWARD 1 -j ACCEPT
-
-mkdir -p /etc/ipsec.d/private
+echo "[INFO] Creating certificate directories..."
+mkdir -p /etc/ipsec.d/private /etc/ipsec.d/cacerts /etc/ipsec.d/certs
 chmod 700 /etc/ipsec.d/private
 
-/usr/sbin/ipsec pki --gen --type rsa --size 4096 --outform pem > /etc/ipsec.d/private/ca-key.pem
-/usr/sbin/ipsec pki --self --ca --lifetime 3650 --in /etc/ipsec.d/private/ca-key.pem --type rsa --dn "CN=VPN Root CA" --outform pem > /etc/ipsec.d/cacerts/ca-cert.pem
+echo "[INFO] Generating CA key and certificate..."
+ipsec pki --gen --type rsa --size 4096 --outform pem > /etc/ipsec.d/private/ca-key.pem
+ipsec pki --self --ca --lifetime 3650 \
+  --in /etc/ipsec.d/private/ca-key.pem \
+  --type rsa \
+  --dn "CN=VPN Root CA" \
+  --outform pem > /etc/ipsec.d/cacerts/ca-cert.pem
 
-/usr/sbin/ipsec pki --gen --type rsa --size 4096 --outform pem > /etc/ipsec.d/private/server-key.pem
+echo "[INFO] Generating server key and certificate..."
+ipsec pki --gen --type rsa --size 4096 --outform pem > /etc/ipsec.d/private/server-key.pem
+ipsec pki --pub --in /etc/ipsec.d/private/server-key.pem --type rsa | \
+ipsec pki --issue --lifetime 1825 \
+  --cacert /etc/ipsec.d/cacerts/ca-cert.pem \
+  --cakey /etc/ipsec.d/private/ca-key.pem \
+  --dn "CN=$PUB_ID" \
+  --san="$SERVER_IP" --san="$PUB_ID" \
+  --flag serverAuth --flag ikeIntermediate \
+  --outform pem > /etc/ipsec.d/certs/server-cert.pem
 
-/usr/sbin/ipsec pki --pub --in /etc/ipsec.d/private/server-key.pem --type rsa | \
-/usr/sbin/ipsec pki --issue --lifetime 1825 --cacert /etc/ipsec.d/cacerts/ca-cert.pem \
---cakey /etc/ipsec.d/private/ca-key.pem --dn "CN=$PUB_ID" \
---san="$SERVER_IP" --san="$PUB_ID" --flag serverAuth --flag ikeIntermediate \
---outform pem > /etc/ipsec.d/certs/server-cert.pem
-
+echo "[INFO] Writing ipsec.conf..."
 cat > /etc/ipsec.conf << EOF
 config setup
-    charondebug="ike 4 knl 4 cfg 4 net 4 enc 4"
+    charondebug="ike 2 knl 2 cfg 2 net 2 enc 2"
     uniqueids=no
 
 conn ikev2-vpn
@@ -57,7 +76,7 @@ conn ikev2-vpn
     rekey=no
     left=%any
     leftid=$PUB_ID
-    leftcert=server-cert.pem
+    leftcert=/etc/ipsec.d/certs/server-cert.pem
     leftsendcert=always
     leftsubnet=0.0.0.0/0
     leftfirewall=yes
@@ -70,18 +89,20 @@ conn ikev2-vpn
     eap_identity=%identity
 EOF
 
+echo "[INFO] Writing ipsec.secrets..."
 cat > /etc/ipsec.secrets << EOF
-: RSA server-key.pem
+: RSA /etc/ipsec.d/private/server-key.pem
 liteuser : EAP "super_passw0rd"
 EOF
 
 chmod 600 /etc/ipsec.secrets
 chmod 600 /etc/ipsec.d/private/*
 
+echo "[INFO] Restarting strongSwan..."
 systemctl restart strongswan-starter
 systemctl enable strongswan-starter
 
-/usr/sbin/ufw --force enable
-
-systemctl status strongswan-starter
-/usr/sbin/ipsec status
+echo "[INFO] VPN setup completed!"
+echo "Connect using IKEv2 with username: liteuser and password: super_passw0rd"
+echo "Server IP: $SERVER_IP"
+echo "You can check VPN status with: ipsec statusall"
